@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Trail &bull; Compliance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h3 class="fw-bold mb-1">Compliance Audit Trail</h3>
+    <p class="text-muted small mb-0">Immutable chronological record of regulatory actions, status updates, and user activities</p>
+  </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card content-card shadow-sm p-3 mb-4">
+  <form method="GET" action="{{ url_for('audit.index') }}" class="row g-2 align-items-center">
+    <div class="col-12 col-md-4">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="Search actor or details...">
+      </div>
+    </div>
+    <div class="col-12 col-md-3">
+      <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Actions</option>
+        {% for a in actions %}
+        <option value="{{ a }}" {% if selected_action == a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-3">
+      <select name="entity_type" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Entity Types</option>
+        {% for e in entity_types %}
+        <option value="{{ e }}" {% if selected_entity == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-2 text-md-end">
+      <a href="{{ url_for('audit.index') }}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card content-card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover custom-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Timestamp (UTC)</th>
+            <th>Action</th>
+            <th>Entity</th>
+            <th>Actor</th>
+            <th>IP Address</th>
+            <th class="pe-4">Event Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if logs %}
+            {% for log in logs %}
+            <tr>
+              <td class="ps-4 font-monospace small text-muted">
+                <i class="bi bi-clock me-1"></i> {{ log.timestamp|format_datetime }}
+              </td>
+              <td>
+                <span class="badge {% if 'COMPLETED' in log.action %}bg-success{% elif 'CREATED' in log.action %}bg-primary{% elif 'REPORT' in log.action %}bg-info text-dark{% else %}bg-secondary{% endif %} font-monospace">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-light text-secondary border font-monospace">{{ log.entity_type }}{% if log.entity_id %} #{{ log.entity_id }}{% endif %}</span>
+              </td>
+              <td>
+                {% if log.user %}
+                  <div class="fw-semibold text-dark">{{ log.user.full_name }}</div>
+                  <small class="text-muted font-monospace">@{{ log.user.username }}</small>
+                {% else %}
+                  <span class="text-muted small">System Process</span>
+                {% endif %}
+              </td>
+              <td><small class="font-monospace text-muted">{{ log.ip_address or 'Local' }}</small></td>
+              <td class="pe-4">
+                <span class="text-dark small">{{ log.details }}</span>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                <i class="bi bi-journal-x fs-3 d-block mb-1"></i> No audit log records found.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+/* Custom Styling for Compliance & Recurring Checklist Tracker */
+
+:root {
+  --primary-color: #2563eb;
+  --primary-dark: #1d4ed8;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --dark-slate: #0f172a;
+  --body-bg: #f8fafc;
+  --card-bg: #ffffff;
+}
+
+body {
+  background-color: var(--body-bg);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #334155;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.nav-link {
+  font-weight: 500;
+  color: #cbd5e1 !important;
+  transition: color 0.15s ease-in-out;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: #ffffff !important;
+}
+
+/* KPI Cards */
+.kpi-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-icon-box {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.5rem;
+}
+
+/* Overdue Urgent Banner */
+.overdue-alert-box {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-left: 6px solid #ef4444;
+  border-radius: 10px;
+  color: #991b1b;
+}
+
+/* Status Pulsing Badge */
+.pulse-badge {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Table styling */
+.custom-table {
+  background-color: var(--card-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.custom-table th {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.custom-table td {
+  vertical-align: middle;
+}
+
+.row-overdue {
+  background-color: #fff1f2 !important;
+}
+
+/* Frequency Badges */
+.badge-freq-daily {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  font-weight: 600;
+}
+
+.badge-freq-weekly {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.badge-freq-monthly {
+  background-color: #d1fae5;
+  color: #065f46;
+  font-weight: 600;
+}
+
+/* Image preview thumbnails */
+.evidence-thumb {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 1px solid #cbd5e1;
+}
+
+.evidence-thumb:hover {
+  transform: scale(1.05);
+}
+
+/* Card aesthetics */
+.content-card {
+  border: none;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+footer {
+  background-color: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.875rem;
+}

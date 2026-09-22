@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard &bull; Compliance & Recurring Checklist Tracker{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h3 class="fw-bold mb-1">Safety & Compliance Dashboard</h3>
+    <p class="text-muted small mb-0">Overview of recurring schedules, pending deadlines, and compliance health</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if current_user.can_manage_checklists %}
+    <a href="{{ url_for('checklists.create') }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-plus-circle"></i> New Checklist
+    </a>
+    {% endif %}
+    <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+      <i class="bi bi-file-earmark-bar-graph"></i> Reports
+    </a>
+  </div>
+</div>
+
+<!-- Overdue Visual Alert Banner (Requirement #6: Provide visual alerts for overdue tasks) -->
+{% if overdue_count > 0 %}
+<div class="alert overdue-alert-box d-flex align-items-center justify-content-between p-3 mb-4 shadow-sm" role="alert">
+  <div class="d-flex align-items-center gap-3">
+    <div class="fs-2 text-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    <div>
+      <h5 class="fw-bold mb-1">URGENT COMPLIANCE NOTICE: {{ overdue_count }} Task(s) Past Due!</h5>
+      <p class="mb-0 small">Immediate inspection or evidence submission is required to restore safety compliance.</p>
+    </div>
+  </div>
+  <a href="{{ url_for('tasks.list_tasks', status='overdue') }}" class="btn btn-danger btn-sm fw-bold px-3">
+    <i class="bi bi-arrow-right-circle me-1"></i> Resolve Overdue Tasks
+  </a>
+</div>
+{% endif %}
+
+<!-- KPI Summary Cards (Requirement #5: Show pending, completed and overdue tasks) -->
+<div class="row g-3 mb-4">
+  <!-- Active Checklists -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card kpi-card p-3 h-100 bg-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Active Checklists</div>
+          <div class="fs-2 fw-bold text-dark mt-1">{{ total_templates }}</div>
+          <small class="text-muted"><i class="bi bi-arrow-repeat text-primary"></i> Recurring Schedules</small>
+        </div>
+        <div class="kpi-icon-box bg-primary bg-opacity-10 text-primary">
+          <i class="bi bi-card-checklist"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Tasks -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card kpi-card p-3 h-100 bg-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Pending Tasks</div>
+          <div class="fs-2 fw-bold text-warning mt-1">{{ pending_count }}</div>
+          <small class="text-muted"><i class="bi bi-hourglass-split text-warning"></i> Awaiting Execution</small>
+        </div>
+        <div class="kpi-icon-box bg-warning bg-opacity-10 text-warning">
+          <i class="bi bi-clock"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overdue Tasks -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card kpi-card p-3 h-100 bg-white {% if overdue_count > 0 %}border border-danger border-2{% endif %}">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Overdue Alerts</div>
+          <div class="fs-2 fw-bold text-danger mt-1 d-flex align-items-center gap-2">
+            {{ overdue_count }}
+            {% if overdue_count > 0 %}
+            <span class="badge bg-danger fs-6 pulse-badge">Action Req</span>
+            {% endif %}
+          </div>
+          <small class="text-muted"><i class="bi bi-exclamation-circle text-danger"></i> Past Due Deadline</small>
+        </div>
+        <div class="kpi-icon-box bg-danger bg-opacity-10 text-danger">
+          <i class="bi bi-shield-x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Rate -->
+  <div class="col-12 col-sm-6 col-xl-3">
+    <div class="card kpi-card p-3 h-100 bg-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Compliance Health</div>
+          <div class="fs-2 fw-bold text-success mt-1">{{ compliance_rate }}%</div>
+          <small class="text-muted"><i class="bi bi-check2-circle text-success"></i> {{ completed_count }} Completed</small>
+        </div>
+        <div class="kpi-icon-box bg-success bg-opacity-10 text-success">
+          <i class="bi bi-activity"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Action Sections -->
+<div class="row g-4">
+  <!-- Left Side: Task Queues -->
+  <div class="col-12 col-lg-8">
+    <!-- Overdue Critical Tasks Section (if any) -->
+    {% if urgent_overdue %}
+    <div class="card content-card shadow-sm mb-4 border-danger border-top border-3">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-danger mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-exclamation-octagon-fill"></i> Overdue Tasks Awaiting Action
+        </h5>
+        <a href="{{ url_for('tasks.list_tasks', status='overdue') }}" class="btn btn-outline-danger btn-sm">View All ({{ overdue_count }})</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover custom-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">Checklist Item</th>
+                <th>Category</th>
+                <th>Due Date & Time</th>
+                <th class="text-end pe-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in urgent_overdue %}
+              <tr class="row-overdue">
+                <td class="ps-3">
+                  <div class="fw-bold text-dark">{{ t.template.title }}</div>
+                  <small class="text-muted">{{ t.template.description or 'Recurring inspection' }}</small>
+                </td>
+                <td><span class="badge bg-secondary-subtle text-secondary border">{{ t.template.category }}</span></td>
+                <td>
+                  <span class="text-danger fw-semibold">
+                    <i class="bi bi-clock-history me-1"></i> {{ t.due_datetime|format_datetime }}
+                  </span>
+                </td>
+                <td class="text-end pe-3">
+                  <a href="{{ url_for('tasks.detail', task_id=t.id) }}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-camera-fill me-1"></i> Complete Now
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming & Pending Tasks -->
+    <div class="card content-card shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-primary"></i> Pending Compliance Tasks
+        </h5>
+        <a href="{{ url_for('tasks.list_tasks', status='pending') }}" class="btn btn-outline-primary btn-sm">View All ({{ pending_count }})</a>
+      </div>
+      <div class="card-body p-0">
+        {% if upcoming_tasks %}
+        <div class="table-responsive">
+          <table class="table table-hover custom-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-3">Checklist</th>
+                <th>Frequency</th>
+                <th>Category</th>
+                <th>Deadline</th>
+                <th class="text-end pe-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in upcoming_tasks %}
+              <tr>
+                <td class="ps-3">
+                  <div class="fw-semibold text-dark">{{ t.template.title }}</div>
+                  <small class="text-muted">Cycle: {{ t.cycle_date|format_date }}</small>
+                </td>
+                <td>
+                  <span class="badge {% if t.template.frequency == 'DAILY' %}badge-freq-daily{% elif t.template.frequency == 'WEEKLY' %}badge-freq-weekly{% else %}badge-freq-monthly{% endif %}">
+                    {{ t.template.frequency }}
+                  </span>
+                </td>
+                <td><small class="text-muted">{{ t.template.category }}</small></td>
+                <td><small class="text-dark fw-medium">{{ t.due_datetime|format_datetime }}</small></td>
+                <td class="text-end pe-3">
+                  <a href="{{ url_for('tasks.detail', task_id=t.id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-clipboard-check me-1"></i> Inspect
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-check2-all text-success fs-1 mb-2 d-block"></i>
+          <p class="mb-0">Great job! All recurring compliance tasks are completed.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Recent Activity & Feed -->
+  <div class="col-12 col-lg-4">
+    <!-- Completed Activity Feed -->
+    <div class="card content-card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill text-success"></i> Recently Completed
+        </h6>
+      </div>
+      <div class="card-body p-3">
+        {% if recent_completed %}
+        <ul class="list-group list-group-flush">
+          {% for t in recent_completed %}
+          <li class="list-group-item px-0 py-2 border-0 border-bottom">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <a href="{{ url_for('tasks.detail', task_id=t.id) }}" class="fw-semibold text-decoration-none text-dark">
+                  {{ t.template.title }}
+                </a>
+                <div class="small text-muted">
+                  By {{ t.completer.full_name if t.completer else 'Staff' }} &bull; {{ t.completed_at|format_datetime }}
+                </div>
+              </div>
+              {% if t.evidences %}
+              <span class="badge bg-info-subtle text-info-emphasis border" title="{{ t.evidences|length }} photo(s) attached">
+                <i class="bi bi-camera"></i> {{ t.evidences|length }}
+              </span>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">No completed tasks yet this period.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Live Compliance Audit Activity (Requirement #7) -->
+    <div class="card content-card shadow-sm">
+      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-journal-text text-secondary"></i> System Audit Stream
+        </h6>
+        {% if current_user.can_view_audit %}
+        <a href="{{ url_for('audit.index') }}" class="small text-decoration-none">Full Log</a>
+        {% endif %}
+      </div>
+      <div class="card-body p-3">
+        {% if recent_logs %}
+        <div class="timeline small">
+          {% for log in recent_logs %}
+          <div class="mb-3 pb-2 border-bottom">
+            <div class="d-flex justify-content-between">
+              <span class="badge bg-secondary font-monospace" style="font-size: 0.7rem;">{{ log.action }}</span>
+              <span class="text-muted" style="font-size: 0.72rem;">{{ log.timestamp|format_datetime }}</span>
+            </div>
+            <p class="mb-0 text-secondary mt-1" style="font-size: 0.8rem;">{{ log.details }}</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No audit events recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

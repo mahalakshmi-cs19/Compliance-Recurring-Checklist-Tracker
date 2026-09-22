@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Export &bull; Compliance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h3 class="fw-bold mb-1">Compliance & Audit Reports</h3>
+    <p class="text-muted small mb-0">Generate, analyze, and export regulatory inspection records and statistics</p>
+  </div>
+  <div class="d-flex gap-2">
+    <!-- Export CSV Button (Requirement #8) -->
+    <a href="{{ url_for('reports.export_csv', status=selected_status, category=selected_category, frequency=selected_frequency, start_date=start_date, end_date=end_date) }}" class="btn btn-outline-success btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV (Excel)
+    </a>
+    <!-- Export PDF Button (Requirement #8) -->
+    <a href="{{ url_for('reports.export_pdf', status=selected_status, category=selected_category, frequency=selected_frequency, start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
+    </a>
+  </div>
+</div>
+
+<!-- Report Filter Controls -->
+<div class="card content-card shadow-sm p-3 mb-4">
+  <form method="GET" action="{{ url_for('reports.index') }}" class="row g-3 align-items-end">
+    <div class="col-12 col-sm-6 col-md-3">
+      <label class="form-label small fw-semibold">Status</label>
+      <select name="status" class="form-select form-select-sm">
+        <option value="ALL" {% if selected_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+        {% for st in statuses %}
+        <option value="{{ st }}" {% if selected_status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-3">
+      <label class="form-label small fw-semibold">Category</label>
+      <select name="category" class="form-select form-select-sm">
+        <option value="ALL" {% if selected_category == 'ALL' %}selected{% endif %}>All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-2">
+      <label class="form-label small fw-semibold">Frequency</label>
+      <select name="frequency" class="form-select form-select-sm">
+        <option value="ALL" {% if selected_frequency == 'ALL' %}selected{% endif %}>All Frequencies</option>
+        {% for freq in frequencies %}
+        <option value="{{ freq }}" {% if selected_frequency == freq %}selected{% endif %}>{{ freq }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-2">
+      <label class="form-label small fw-semibold">From Date</label>
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+    </div>
+
+    <div class="col-12 col-sm-6 col-md-2">
+      <label class="form-label small fw-semibold">To Date</label>
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+    </div>
+
+    <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+      <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+      <button type="submit" class="btn btn-primary btn-sm px-3">
+        <i class="bi bi-funnel-fill me-1"></i> Apply Filters
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Report Summary Metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card content-card p-3 border-start border-primary border-4">
+      <small class="text-muted text-uppercase fw-semibold">Filtered Tasks</small>
+      <h4 class="fw-bold mb-0 mt-1">{{ summary_stats.total }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card content-card p-3 border-start border-success border-4">
+      <small class="text-muted text-uppercase fw-semibold">Completed</small>
+      <h4 class="fw-bold mb-0 mt-1 text-success">{{ summary_stats.completed }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card content-card p-3 border-start border-danger border-4">
+      <small class="text-muted text-uppercase fw-semibold">Overdue</small>
+      <h4 class="fw-bold mb-0 mt-1 text-danger">{{ summary_stats.overdue }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card content-card p-3 border-start border-info border-4">
+      <small class="text-muted text-uppercase fw-semibold">Compliance Rate</small>
+      <h4 class="fw-bold mb-0 mt-1 text-primary">{{ summary_stats.compliance_rate }}%</h4>
+    </div>
+  </div>
+</div>
+
+<!-- Tasks Preview Table -->
+<div class="card content-card shadow-sm">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <h6 class="fw-bold mb-0 text-dark">Matching Inspection Records ({{ tasks|length }})</h6>
+    <small class="text-muted">Preview of data included in the export</small>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover custom-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">ID</th>
+            <th>Checklist Item</th>
+            <th>Category</th>
+            <th>Frequency</th>
+            <th>Cycle Date</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Completed By</th>
+            <th class="text-end pe-4">Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if tasks %}
+            {% for t in tasks %}
+            <tr>
+              <td class="ps-4 font-monospace small">#{{ t.id }}</td>
+              <td class="fw-semibold text-dark">{{ t.template.title }}</td>
+              <td><span class="badge bg-light text-secondary border">{{ t.template.category }}</span></td>
+              <td><small class="text-muted">{{ t.template.frequency }}</small></td>
+              <td><small>{{ t.cycle_date|format_date }}</small></td>
+              <td><small>{{ t.due_datetime|format_datetime }}</small></td>
+              <td>
+                {% if t.effective_status == 'COMPLETED' %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                {% elif t.effective_status == 'OVERDUE' %}
+                  <span class="badge bg-danger">Overdue</span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Pending</span>
+                {% endif %}
+              </td>
+              <td><small>{{ t.completer.full_name if t.completer else '-' }}</small></td>
+              <td class="text-end pe-4">
+                {% if t.evidences %}
+                  <span class="badge bg-info-subtle text-info-emphasis border"><i class="bi bi-camera"></i> {{ t.evidences|length }}</span>
+                {% else %}
+                  <span class="text-muted small">-</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-4 text-muted">
+                No compliance records match the specified filters.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

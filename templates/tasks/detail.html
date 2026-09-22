@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Task #{{ task.id }} &bull; Compliance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{{ url_for('tasks.list_tasks') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Tasks
+    </a>
+    <h3 class="fw-bold mb-0">Task Inspection #{{ task.id }}</h3>
+  </div>
+  <div>
+    {% if task.effective_status == 'COMPLETED' %}
+      <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">
+        <i class="bi bi-check-circle-fill me-1"></i> Completed
+      </span>
+    {% elif task.effective_status == 'OVERDUE' %}
+      <span class="badge bg-danger text-white px-3 py-2 fs-6 pulse-badge">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i> Overdue Action Required
+      </span>
+    {% else %}
+      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 fs-6">
+        <i class="bi bi-clock-fill me-1"></i> Pending Inspection
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Side: Task Info and Instructions -->
+  <div class="col-12 col-lg-7">
+    <!-- Checklist Specifications Card -->
+    <div class="card content-card shadow-sm mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-dark">{{ task.template.title }}</h5>
+        <div class="d-flex gap-2 mt-2">
+          <span class="badge bg-secondary-subtle text-dark border">{{ task.template.category }}</span>
+          <span class="badge {% if task.template.frequency == 'DAILY' %}badge-freq-daily{% elif task.template.frequency == 'WEEKLY' %}badge-freq-weekly{% else %}badge-freq-monthly{% endif %}">
+            {{ task.template.frequency }} Recurrence
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        <h6 class="fw-bold text-muted small text-uppercase mb-2">Inspection Instructions & Standard Operating Procedure</h6>
+        <div class="p-3 bg-light rounded border text-dark">
+          {{ task.template.description or 'Please execute standard visual inspection, check safety indicators, and verify compliance with operational guidelines.' }}
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row g-3 small">
+          <div class="col-6 col-md-3">
+            <span class="text-muted d-block">Cycle Date</span>
+            <span class="fw-bold">{{ task.cycle_date|format_date }}</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="text-muted d-block">Due Deadline</span>
+            <span class="fw-bold {% if task.effective_status == 'OVERDUE' %}text-danger{% endif %}">
+              {{ task.due_datetime|format_datetime }}
+            </span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="text-muted d-block">Assigned Role</span>
+            <span class="fw-bold">{{ task.template.assigned_user.full_name if task.template.assigned_user else 'All Operators' }}</span>
+          </div>
+          <div class="col-6 col-md-3">
+            <span class="text-muted d-block">Created By</span>
+            <span class="fw-bold">{{ task.template.creator.full_name }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completion Details / Results Section (If Completed) -->
+    {% if task.status == 'COMPLETED' %}
+    <div class="card content-card shadow-sm border-success border-top border-3 mb-4">
+      <div class="card-header bg-white py-3">
+        <h5 class="fw-bold text-success mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-shield-check"></i> Verified Completion Record
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="fw-bold text-muted small text-uppercase d-block mb-1">Inspector Notes & Observations</label>
+          <div class="p-3 bg-success-subtle bg-opacity-25 rounded border text-dark">
+            {{ task.notes or 'No specific notes recorded.' }}
+          </div>
+        </div>
+
+        <div class="row g-3 small mb-3">
+          <div class="col-6">
+            <span class="text-muted d-block">Completed By Inspector</span>
+            <span class="fw-bold text-dark"><i class="bi bi-person-fill text-primary"></i> {{ task.completer.full_name if task.completer else 'N/A' }}</span>
+          </div>
+          <div class="col-6">
+            <span class="text-muted d-block">Completion Timestamp</span>
+            <span class="fw-bold text-dark"><i class="bi bi-clock-fill text-secondary"></i> {{ task.completed_at|format_datetime }}</span>
+          </div>
+        </div>
+
+        <!-- Attached Photo Evidences (Requirement #4) -->
+        <div>
+          <label class="fw-bold text-muted small text-uppercase d-block mb-2">
+            Uploaded Photo Evidence ({{ task.evidences|length }})
+          </label>
+          {% if task.evidences %}
+          <div class="d-flex flex-wrap gap-3">
+            {% for ev in task.evidences %}
+            <div class="position-relative">
+              <img src="{{ url_for('static', filename='uploads/evidence/' + ev.filename) }}" 
+                   data-full-src="{{ url_for('static', filename='uploads/evidence/' + ev.filename) }}"
+                   alt="{{ ev.original_filename }}" 
+                   class="evidence-thumb shadow-sm"
+                   title="Click to view high-resolution photo: {{ ev.original_filename }}">
+              <div class="small text-muted mt-1 text-center" style="max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ ev.original_filename }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <p class="text-muted small mb-0">No photographic evidence was attached for this task.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Side: Action Form (if pending/overdue) or Audit Log -->
+  <div class="col-12 col-lg-5">
+    {% if task.status != 'COMPLETED' %}
+      {% if current_user.can_complete_tasks %}
+      <!-- Completion Submission Form (Requirements #3 & #4) -->
+      <div class="card content-card shadow-sm border-0 mb-4 {% if task.effective_status == 'OVERDUE' %}border-danger border-2{% endif %}">
+        <div class="card-header bg-white py-3">
+          <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-check2-square text-success"></i> Mark Task Completed
+          </h5>
+          <small class="text-muted">Record compliance observations and attach photo proof</small>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('tasks.complete_task', task_id=task.id) }}" enctype="multipart/form-data">
+            <!-- Inspection Notes -->
+            <div class="mb-3">
+              <label for="notes" class="form-label fw-semibold">Inspector Notes & Comments</label>
+              <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Enter findings (e.g., Gauge inspected, pressure at 195 PSI, tags signed and dated)."></textarea>
+            </div>
+
+            <!-- Photo Evidence Upload (Requirement #4) -->
+            <div class="mb-3">
+              <label for="photo_evidence" class="form-label fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-camera-fill text-primary"></i> Attach Photo Evidence
+              </label>
+              <input class="form-control" type="file" id="photo_evidence" name="photo_evidence" accept="image/png, image/jpeg, image/webp" multiple>
+              <div class="form-text">Attach clear photos verifying safety conditions (JPG, PNG, WEBP).</div>
+            </div>
+
+            <!-- Instant Image Preview Container -->
+            <div class="row g-2 mb-3" id="photoPreviewContainer"></div>
+
+            <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+              <i class="bi bi-check-circle-fill me-1"></i> Submit Task Completion
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="alert alert-info shadow-sm">
+        <i class="bi bi-info-circle-fill me-2"></i> You are signed in as an <b>Auditor</b> (Read-Only). Only Operators and Admins can submit task completions.
+      </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- Task Audit History (Requirement #7) -->
+    <div class="card content-card shadow-sm">
+      <div class="card-header bg-white py-3">
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-secondary"></i> Task Audit Log
+        </h6>
+      </div>
+      <div class="card-body p-3">
+        {% if history_logs %}
+        <ul class="list-group list-group-flush small">
+          {% for log in history_logs %}
+          <li class="list-group-item px-0 py-2 border-0 border-bottom">
+            <div class="d-flex justify-content-between">
+              <span class="badge bg-secondary">{{ log.action }}</span>
+              <span class="text-muted">{{ log.timestamp|format_datetime }}</span>
+            </div>
+            <div class="mt-1 text-secondary">{{ log.details }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">Actor: {{ log.user.full_name if log.user else 'System' }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted small mb-0">No historical modifications recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

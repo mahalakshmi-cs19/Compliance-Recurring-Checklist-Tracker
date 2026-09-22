@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks Tracker &bull; Compliance Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h3 class="fw-bold mb-1">Compliance Tasks Worklist</h3>
+    <p class="text-muted small mb-0">Track and fulfill daily, weekly, and monthly recurring compliance checkpoints</p>
+  </div>
+</div>
+
+<!-- Status Tabs (Requirement #5: Show pending, completed and overdue tasks) -->
+<ul class="nav nav-pills mb-3 gap-2">
+  <li class="nav-item">
+    <a class="nav-link {% if selected_status == 'all' %}active{% else %}bg-white border text-secondary{% endif %}" href="{{ url_for('tasks.list_tasks', status='all', category=selected_category, frequency=selected_frequency) }}">
+      All Tasks <span class="badge bg-secondary ms-1">{{ total_count }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if selected_status == 'pending' %}active bg-warning text-dark{% else %}bg-white border text-secondary{% endif %}" href="{{ url_for('tasks.list_tasks', status='pending', category=selected_category, frequency=selected_frequency) }}">
+      <i class="bi bi-clock me-1"></i> Pending <span class="badge bg-dark ms-1">{{ pending_count }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if selected_status == 'overdue' %}active bg-danger{% else %}bg-white border text-danger{% endif %}" href="{{ url_for('tasks.list_tasks', status='overdue', category=selected_category, frequency=selected_frequency) }}">
+      <i class="bi bi-exclamation-triangle-fill me-1"></i> Overdue Alerts 
+      <span class="badge bg-danger ms-1 {% if overdue_count > 0 %}pulse-badge{% endif %}">{{ overdue_count }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if selected_status == 'completed' %}active bg-success{% else %}bg-white border text-secondary{% endif %}" href="{{ url_for('tasks.list_tasks', status='completed', category=selected_category, frequency=selected_frequency) }}">
+      <i class="bi bi-check2-circle me-1"></i> Completed <span class="badge bg-secondary ms-1">{{ completed_count }}</span>
+    </a>
+  </li>
+</ul>
+
+<!-- Filter Controls -->
+<div class="card content-card shadow-sm p-3 mb-4">
+  <form method="GET" action="{{ url_for('tasks.list_tasks') }}" class="row g-2 align-items-center">
+    <input type="hidden" name="status" value="{{ selected_status }}">
+    <div class="col-12 col-md-5">
+      <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-4">
+      <select name="frequency" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All Frequencies</option>
+        {% for freq in frequencies %}
+        <option value="{{ freq }}" {% if selected_frequency == freq %}selected{% endif %}>{{ freq }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-3 text-md-end">
+      <a href="{{ url_for('tasks.list_tasks', status=selected_status) }}" class="btn btn-outline-secondary btn-sm w-100">Reset Filters</a>
+    </div>
+  </form>
+</div>
+
+<!-- Tasks Table -->
+<div class="card content-card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover custom-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Task #</th>
+            <th>Checklist Item</th>
+            <th>Frequency</th>
+            <th>Cycle Date</th>
+            <th>Due Deadline</th>
+            <th>Current Status</th>
+            <th class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if tasks %}
+            {% for t in tasks %}
+            <tr class="{% if t.effective_status == 'OVERDUE' %}row-overdue{% endif %}">
+              <td class="ps-4 font-monospace fw-bold text-muted">#{{ t.id }}</td>
+              <td>
+                <div class="fw-bold text-dark">{{ t.template.title }}</div>
+                <small class="badge bg-light text-secondary border">{{ t.template.category }}</small>
+                {% if t.evidences %}
+                  <span class="badge bg-info-subtle text-info-emphasis border ms-1" title="{{ t.evidences|length }} photo(s) attached">
+                    <i class="bi bi-camera"></i> {{ t.evidences|length }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge {% if t.template.frequency == 'DAILY' %}badge-freq-daily{% elif t.template.frequency == 'WEEKLY' %}badge-freq-weekly{% else %}badge-freq-monthly{% endif %}">
+                  {{ t.template.frequency }}
+                </span>
+              </td>
+              <td><small class="text-dark">{{ t.cycle_date|format_date }}</small></td>
+              <td>
+                {% if t.effective_status == 'OVERDUE' %}
+                  <span class="text-danger fw-bold d-flex align-items-center gap-1">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ t.due_datetime|format_datetime }}
+                  </span>
+                {% else %}
+                  <span class="text-secondary small">{{ t.due_datetime|format_datetime }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if t.effective_status == 'COMPLETED' %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                    <i class="bi bi-check-circle me-1"></i> Completed
+                  </span>
+                {% elif t.effective_status == 'OVERDUE' %}
+                  <span class="badge bg-danger text-white px-2 py-1 pulse-badge">
+                    <i class="bi bi-exclamation-octagon me-1"></i> Overdue
+                  </span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                    <i class="bi bi-clock me-1"></i> Pending
+                  </span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-4">
+                {% if t.effective_status != 'COMPLETED' and current_user.can_complete_tasks %}
+                  <a href="{{ url_for('tasks.detail', task_id=t.id) }}" class="btn btn-sm {% if t.effective_status == 'OVERDUE' %}btn-danger{% else %}btn-primary{% endif %}">
+                    <i class="bi bi-clipboard-check me-1"></i> Inspect
+                  </a>
+                {% else %}
+                  <a href="{{ url_for('tasks.detail', task_id=t.id) }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-eye me-1"></i> Details
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-check2-circle fs-2 d-block mb-1 text-success"></i> No tasks found matching this criteria.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

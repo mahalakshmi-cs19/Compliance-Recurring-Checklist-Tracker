@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In &bull; Compliance Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center py-5">
+  <div class="col-12 col-md-8 col-lg-5 col-xl-4">
+    <div class="card content-card shadow-sm border-0 p-4">
+      <div class="text-center mb-4">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary p-3 rounded-circle mb-3">
+          <i class="bi bi-shield-lock-fill fs-1"></i>
+        </div>
+        <h3 class="fw-bold mb-1">Welcome Back</h3>
+        <p class="text-muted small">Sign in to manage recurring compliance checklists</p>
+      </div>
+
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="mb-3">
+          <label for="username" class="form-label fw-semibold">Username or Email</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+            <input type="text" class="form-control" id="username" name="username" placeholder="e.g. admin" required autofocus>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label for="password" class="form-label fw-semibold">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold shadow-sm">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+        </button>
+      </form>
+
+      <!-- Quick Demo Login Helpers for College Viva / Testing -->
+      <div class="mt-4 pt-3 border-top">
+        <p class="text-muted small text-center mb-2 fw-semibold">Demo Accounts for Testing:</p>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start" onclick="fillCredentials('admin', 'admin123')">
+            <i class="bi bi-person-fill-gear text-primary me-2"></i> <b>Admin:</b> admin / admin123
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start" onclick="fillCredentials('operator', 'operator123')">
+            <i class="bi bi-person-badge text-success me-2"></i> <b>Operator:</b> operator / operator123
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm text-start" onclick="fillCredentials('auditor', 'auditor123')">
+            <i class="bi bi-person-check text-info me-2"></i> <b>Auditor:</b> auditor / auditor123
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+function fillCredentials(user, pass) {
+  document.getElementById('username').value = user;
+  document.getElementById('password').value = pass;
+}
+</script>
+{% endblock %}
